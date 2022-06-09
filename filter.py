@@ -15,7 +15,10 @@ parser.add_argument('--label_dir', default='./chooseVideoFrameYolov5/exp/labels'
 parser.add_argument('--image_dir', default='./chooseVideoFrame/',type=str, help="Path of the image")
 parser.add_argument('--newExp_dir', default='./chooseVideoFrameYolov5/newExp/',type=str, help="Label path after processing")
 parser.add_argument('--visualize_dir', default='./visualize/',type=str, help="visualize path")
-#labelPath = './chooseVideoFrameYolov5/exp/labels'
+parser.add_argument('--r_area1', default=0.7,type=float, help="r_area")
+parser.add_argument('--r_area2', default=0.7,type=float, help="r_area")
+parser.add_argument('--r_area3', default=0.5,type=float, help="r_area")
+
 arg = parser.parse_args()
 
 font = cv2.FONT_HERSHEY_COMPLEX_SMALL
@@ -111,7 +114,7 @@ def filterAbnormalBox(headAr, abnormalBox,filename):
 
         r_area = inter_area/min_box_area
         
-        if r_area > 0.7:
+        if r_area > arg.r_area2:
             
             #在这里可视化，可以看到有交集重合度大于r_area的检测框
             '''
@@ -125,7 +128,7 @@ def filterAbnormalBox(headAr, abnormalBox,filename):
             
             r_area2 = headBox_area/abnormalBox_area
 
-            if r_area2 > 0.5 and r_area2 < 1.5:
+            if r_area2 > arg.r_area3 and r_area2 < 2-arg.r_area3:
                 
                 #在这里可视化，可以看到有headBox_area与abnormalBox_area面积差距不能过大
                 '''
@@ -144,7 +147,13 @@ def filterAbnormalBox(headAr, abnormalBox,filename):
 def r_filter(box1, box2, headAr,filename):
     
     #在这里可视化，可以看到匹配全过程
-    
+    '''
+    #可视化
+    t = time.time()
+    imgName = filename.split('.')[0]+'.jpg'
+    newImgName = filename.split('.')[0]+ str(int(round(t * 1000000))) + '.jpg'
+    VisualizeBoxPlt(box1,box2,'box1','box2','1 Find boxes that may be abnormal', arg.image_dir+imgName, arg.visualize_dir+newImgName)
+    '''
     box1CenterX = (box1[2] + box1[0]) / 2
     box1CenterY = (box1[1] + box1[3]) / 2
     box2CenterX = (box2[2] + box2[0]) / 2
@@ -183,7 +192,7 @@ def r_filter(box1, box2, headAr,filename):
     
     boolHead = 0
     
-    if r_area>0.7:   
+    if r_area>arg.r_area1:   
 
         #在这里可视化，可以看到有交集重合度大于r_area的检测框
         '''
@@ -275,7 +284,7 @@ for root, dirs, files in os.walk(labelPath):
 
                     filter = r_filter(box1,box2,headAr,filename)
                     
-                    if filter > 0.7:
+                    if filter > arg.r_area1:
                         s_count = s_count+1
 
 
@@ -287,8 +296,14 @@ for root, dirs, files in os.walk(labelPath):
                         # 当box1的面积小于等于box2时，该坐标就该删除了
                         if compareArea(box1,box2) == 1:
                             delteE = 1
-                            # 可视化
-                            #VisualizeBoxPlt(box1,box2,'box1','box2','4 Visualize the results of a successful filter', imgTag=True, path = path)
+                            #在这里可视化，可以看到有最终的少选结果，box1是异常的，要剔除的
+                            #'''
+                            #可视化
+                            t = time.time()
+                            imgName = filename.split('.')[0]+'.jpg'
+                            newImgName = filename.split('.')[0]+ str(int(round(t * 1000000))) + '.jpg'
+                            VisualizeBoxPlt(box1,box2,'box1','box2','1 Find boxes that may be abnormal', arg.image_dir+imgName, arg.visualize_dir+newImgName)
+                            #'''
                             countAll = countAll + 1
                             break
 
@@ -305,7 +320,7 @@ for root, dirs, files in os.walk(labelPath):
                     new_data_txt.append(vbodyAr2[i][4])
                     new_data_txt.append(" ")
                     new_data_txt.append(vbodyAr2[i][5]) 
-            print("new:",len(new_data_txt))
+            print("new:",int(len(new_data_txt)/11))
             print("old:",len(vbodyAr))
             
             newExp = arg.newExp_dir
